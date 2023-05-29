@@ -7,7 +7,7 @@ exports.register = async (req, res) => {
         const { password, email } = req.body
         const found = await User.findOne({ email })
         if (found) {
-            return res.json({
+            return res.status(409).json({
                 msg: "Email Already exist",
             })
         }
@@ -22,7 +22,7 @@ exports.register = async (req, res) => {
             result
         })
     } catch (error) {
-        res.json({ msg: " Something went Wrong ", error })
+        res.status(400).json({ msg: " Something went Wrong ", error })
     }
 }
 exports.fetchUsers = async (req, res) => {
@@ -46,21 +46,30 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body
         console.log(req.body);
+        // const result = await User.findOne({ email }).lean()
         const result = await User.findOne({ email })
 
         if (!result) {
-            return res.json({ msg: "Email is not registered with us" })
+            return res.status(401).json({ msg: "Email is not registered with us" })
         }
         console.log(result);
         const match = await bcrypt.compare(password, result.password)
         if (!match) {
-            return res.json({ msg: "Password Do NOt Match" })
+            return res.status(401).json({ msg: "Password Do Not Match" })
         }
         const token = jwt.sign({ name: "kate" }, process.env.JWT_KEY)
-        res.json({ msg: "Login Successfuly", token })
+        res.json({
+            msg: "Login Success",
+            result: {
+                _id: result._id,
+                name: result.name,
+                email: result.email,
+                token
+            }
+        })
 
     } catch (error) {
-        res.json({ msg: " Something went Wrong login " + error })
+        res.status(400).json({ msg: " Something went Wrong login " + error })
     }
 }
 exports.destroy = async (req, res) => {
